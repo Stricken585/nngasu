@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum LessonType {
+  LECTURE
+  PRACTICE
+  LAB
+}
+
+enum WeekParity {
+  EVEN
+  ODD
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String // bcrypt-хэш
+  fullName  String
+  role      Role     @default(STUDENT)
+  groupId   String? // только для role = STUDENT
+  group     Group?   @relation(fields: [groupId], references: [id])
+  createdAt DateTime @default(now())
+
+  assignments      Assignment[]
+  scheduleEntries  ScheduleEntry[]
+  gradesGiven      Grade[]         @relation("GradesGivenByTeacher")
+  gradesReceived   Grade[]         @relation("GradesReceivedByStudent")
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
+}
+
+model Group {
+  id              String          @id @default(uuid())
+  name            String          @unique // "ИВТ-21-1"
+  students        User[]
+  assignments     Assignment[]
+  scheduleEntries ScheduleEntry[]
+  groupMessages   Message[]
+}
+
+model Discipline {
+  id              String          @id @default(uuid())
+  name            String          @unique
+  assignments     Assignment[]
+  scheduleEntries ScheduleEntry[]
+  grades          Grade[]
+}
+
+// многие-ко-многим teacher↔discipline↔group, не завязана на расписание
+model Assignment {
+  id           String     @id @default(uuid())
+  teacherId    String
+  teacher      User       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  disciplineId String
+  discipline   Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  groupId      String
+  group        Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, disciplineId, groupId])
+}
+
+model ScheduleEntry {
+  id           String     @id @default(uuid())
+  dayOfWeek    DayOfWeek
+  weekParity   WeekParity
+  pairNumber   Int // 1-6, время — см. PAIR_TIMES в коде
+  room         String
+  lessonType   LessonType
+  disciplineId String
+  discipline   Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  teacherId    String
+  teacher      User       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  groupId      String
+  group        Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model Grade {
+  id           String     @id @default(uuid())
+  value        Decimal    @db.Decimal(3, 2) // 5-балльная, дробная (напр. 4.60)
+  studentId    String
+  student      User       @relation("GradesReceivedByStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId    String
+  teacher      User       @relation("GradesGivenByTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  disciplineId String
+  discipline   Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String? // личное сообщение
+  receiver   User?    @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  groupId    String? // групповая рассылка
+  group      Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
