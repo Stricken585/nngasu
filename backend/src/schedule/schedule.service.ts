@@ -72,7 +72,8 @@ export class ScheduleService {
     await this.prisma.scheduleEntry.delete({ where: { id } });
   }
 
-  private async validate(entry: CreateScheduleEntryDto, excludeId?: string) {
+  // Публичный: им же проверяет записи AdminJS (admin.module.ts).
+  async validate(entry: CreateScheduleEntryDto, excludeId?: string) {
     if (!(await this.assignments.exists(entry.teacherId, entry.disciplineId, entry.groupId))) {
       throw new BadRequestException(
         'Преподаватель не закреплён за этой дисциплиной у этой группы — сначала создайте Assignment',

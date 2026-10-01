@@ -22,3 +22,7 @@ npm-debug.log*
 
 # Coverage
 coverage/
+
+# Build caches
+.adminjs/
+*.tsbuildinfo
