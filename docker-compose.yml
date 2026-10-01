@@ -1,0 +1,45 @@
+# Dev-окружение: postgres + backend (NestJS, watch) + frontend (Vite).
+# Запуск: cp .env.example .env && cp backend/.env.example backend/.env && docker compose up --build
+# Флаг :z у bind-mount'ов — для хостов с SELinux (Fedora и т.п.), на остальных игнорируется.
+
+# Явное имя проекта: из кириллического имени каталога compose его не выводит.
+name: university
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    env_file: .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app:z
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      API_PROXY_TARGET: http://backend:3000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app:z
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
