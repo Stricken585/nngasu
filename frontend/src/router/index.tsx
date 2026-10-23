@@ -5,6 +5,7 @@ import { RegisterPage } from '../features/auth/RegisterPage'
 import { GradesPage } from '../pages/GradesPage'
 import { HomePage } from '../pages/HomePage'
 import { MessagesPage } from '../pages/MessagesPage'
+import { NewsPage } from '../pages/NewsPage'
 import { NotFoundPage } from '../pages/NotFoundPage'
 import { SchedulePage } from '../pages/SchedulePage'
 import { GuestOnly, RequireRole } from './RequireRole'
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
     element: <RequireRole><Layout /></RequireRole>,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'news', element: <NewsPage /> },
       { path: 'schedule', element: <SchedulePage /> },
       { path: 'grades', element: <RequireRole roles={['STUDENT', 'TEACHER']}><GradesPage /></RequireRole> },
       { path: 'messages', element: <RequireRole roles={['STUDENT', 'TEACHER']}><MessagesPage /></RequireRole> },

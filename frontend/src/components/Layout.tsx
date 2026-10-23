@@ -1,21 +1,24 @@
-import { AppShell, Avatar, Burger, Group, Menu, NavLink, Text, UnstyledButton } from '@mantine/core'
+import { ActionIcon, Menu, Text } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import {
   IconCalendar,
-  IconChevronDown,
   IconExternalLink,
   IconHome,
   IconLogout,
+  IconMenu2,
   IconMessages,
-  IconSchool,
+  IconNews,
   IconStar,
+  IconX,
 } from '@tabler/icons-react'
 import type { ReactNode } from 'react'
 import { NavLink as RouterNavLink, Outlet, useNavigate } from 'react-router-dom'
 import type { Role } from '../api/types'
 import { useAuth, useCurrentUser } from '../features/auth/AuthContext'
 import { SocketProvider } from '../features/messages/SocketContext'
+import { BrandMark } from './BrandMark'
 import { ROLE_LABELS } from './roleLabels'
+import { ThemeToggle } from './ThemeToggle'
 
 interface NavItem {
   to: string
@@ -25,10 +28,11 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: '/', label: 'Главная', icon: <IconHome size={18} /> },
-  { to: '/schedule', label: 'Расписание', icon: <IconCalendar size={18} /> },
-  { to: '/grades', label: 'Оценки', icon: <IconStar size={18} />, roles: ['STUDENT', 'TEACHER'] },
-  { to: '/messages', label: 'Сообщения', icon: <IconMessages size={18} />, roles: ['STUDENT', 'TEACHER'] },
+  { to: '/', label: 'Главная', icon: <IconHome size={18} stroke={1.8} /> },
+  { to: '/news', label: 'Новости', icon: <IconNews size={18} stroke={1.8} /> },
+  { to: '/schedule', label: 'Расписание', icon: <IconCalendar size={18} stroke={1.8} /> },
+  { to: '/grades', label: 'Оценки', icon: <IconStar size={18} stroke={1.8} />, roles: ['STUDENT', 'TEACHER'] },
+  { to: '/messages', label: 'Сообщения', icon: <IconMessages size={18} stroke={1.8} />, roles: ['STUDENT', 'TEACHER'] },
 ]
 
 const initials = (name: string) =>
@@ -49,39 +53,44 @@ export function Layout() {
 
   return (
     <SocketProvider>
-      <AppShell
-        header={{ height: 60 }}
-        navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: !opened } }}
-        padding="md"
-      >
-        <AppShell.Header>
-          <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-            <Group gap="xs" wrap="nowrap">
-              <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-              <IconSchool size={26} color="var(--mantine-color-blue-6)" />
-              <Text fw={700} visibleFrom="xs">
-                Сайт вуза
-              </Text>
-            </Group>
+      <header className="site-header">
+        <div className="bar">
+          <RouterNavLink to="/" className="brand" aria-label="ННГАСУ — на главную" onClick={close}>
+            <BrandMark />
+            <span className="brand-name">ННГАСУ</span>
+          </RouterNavLink>
+
+          <nav className={`nav${opened ? ' open' : ''}`} id="nav" aria-label="Основное меню">
+            {items.map((item) => (
+              <RouterNavLink key={item.to} to={item.to} end={item.to === '/'} className="nav-link" onClick={close}>
+                {item.icon}
+                {item.label}
+              </RouterNavLink>
+            ))}
+            {user.role === 'ADMIN' && (
+              <a className="nav-link" href="/admin" target="_blank" rel="noreferrer">
+                <IconExternalLink size={18} stroke={1.8} />
+                Админ-панель
+              </a>
+            )}
+          </nav>
+
+          <div className="bar-actions">
+            <ThemeToggle />
             <Menu position="bottom-end" width={220}>
               <Menu.Target>
-                <UnstyledButton>
-                  <Group gap="xs" wrap="nowrap">
-                    <Avatar color="blue" radius="xl" size="sm">
-                      {initials(user.fullName)}
-                    </Avatar>
-                    <div style={{ lineHeight: 1.1 }}>
-                      <Text size="sm" fw={500} lineClamp={1}>
-                        {user.fullName}
-                      </Text>
-                      <Text size="xs" c="dimmed">
-                        {ROLE_LABELS[user.role]}
-                        {user.group && ` · ${user.group.name}`}
-                      </Text>
-                    </div>
-                    <IconChevronDown size={14} />
-                  </Group>
-                </UnstyledButton>
+                <button type="button" className="user-btn" aria-label="Меню пользователя">
+                  <span className="user-avatar">{initials(user.fullName)}</span>
+                  <span className="user-meta">
+                    <Text className="user-name" lineClamp={1}>
+                      {user.fullName}
+                    </Text>
+                    <span className="user-role">
+                      {ROLE_LABELS[user.role]}
+                      {user.group && ` · ${user.group.name}`}
+                    </span>
+                  </span>
+                </button>
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Label>{user.email}</Menu.Label>
@@ -97,35 +106,24 @@ export function Layout() {
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
-          </Group>
-        </AppShell.Header>
+            <ActionIcon
+              className="burger"
+              variant="default"
+              size={38}
+              aria-label={opened ? 'Закрыть меню' : 'Открыть меню'}
+              aria-expanded={opened}
+              aria-controls="nav"
+              onClick={toggle}
+            >
+              {opened ? <IconX size={20} stroke={1.8} /> : <IconMenu2 size={20} stroke={1.8} />}
+            </ActionIcon>
+          </div>
+        </div>
+      </header>
 
-        <AppShell.Navbar p="xs">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              component={RouterNavLink}
-              to={item.to}
-              end={item.to === '/'}
-              label={item.label}
-              leftSection={item.icon}
-              onClick={close}
-            />
-          ))}
-          {user.role === 'ADMIN' && (
-            <NavLink
-              href="/admin"
-              target="_blank"
-              label="Админ-панель"
-              leftSection={<IconExternalLink size={18} />}
-            />
-          )}
-        </AppShell.Navbar>
-
-        <AppShell.Main>
-          <Outlet />
-        </AppShell.Main>
-      </AppShell>
+      <main className="page">
+        <Outlet />
+      </main>
     </SocketProvider>
   )
 }

@@ -18,7 +18,7 @@ function Lesson({ entry, show }: { entry: ScheduleEntry; show: Props['show'] }) 
       <Text size="sm" fw={600} lh={1.25} style={{ overflowWrap: 'anywhere' }}>
         {entry.discipline.name}
       </Text>
-      <Badge size="xs" variant="light" color={type.color} w="fit-content">
+      <Badge size="xs" variant="light" className="lesson-badge" data-kind={entry.lessonType} w="fit-content">
         {type.label}
       </Badge>
       {(show === 'teacher' || show === 'both') && (
@@ -49,7 +49,7 @@ function ScheduleByDay({ entries, show }: { entries: ScheduleEntry[]; show: Prop
   return (
     <Stack>
       {days.map((d) => (
-        <Card key={d.value} withBorder radius="md" padding="sm" bg={d.value === today ? 'var(--mantine-color-blue-light)' : undefined}>
+        <Card key={d.value} withBorder padding="sm" className={d.value === today ? 'is-today' : undefined}>
           <Text fw={700} mb="xs">
             {d.label}
           </Text>
@@ -85,14 +85,14 @@ export function ScheduleTable({ entries, parity, show }: Props) {
   if (isMobile) return <ScheduleByDay entries={visible} show={show} />
 
   return (
-    <Paper withBorder radius="md">
+    <Paper withBorder style={{ overflow: 'hidden' }}>
       <ScrollArea type="auto">
         <Table withColumnBorders layout="fixed" miw={900} verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
               <Table.Th w={90}>Пара</Table.Th>
               {DAYS.map((d) => (
-                <Table.Th key={d.value} bg={d.value === today ? 'var(--mantine-color-blue-light)' : undefined}>
+                <Table.Th key={d.value} className={d.value === today ? 'is-today' : undefined}>
                   {d.label}
                 </Table.Th>
               ))}

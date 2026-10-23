@@ -19,11 +19,11 @@ function Bubble({ message, mine, showAuthor }: { message: Message; mine: boolean
         py={6}
         radius="lg"
         maw="75%"
-        bg={mine ? 'var(--mantine-color-blue-filled)' : 'var(--mantine-color-gray-1)'}
-        c={mine ? 'white' : undefined}
+        bg={mine ? 'var(--ink)' : 'var(--surface-2)'}
+        c={mine ? 'var(--bg)' : undefined}
       >
         {showAuthor && !mine && (
-          <Text size="xs" fw={700} c="blue">
+          <Text size="xs" fw={600} c="var(--soft-ink)">
             {message.sender.fullName}
             {message.sender.role === 'TEACHER' && ' · преподаватель'}
           </Text>

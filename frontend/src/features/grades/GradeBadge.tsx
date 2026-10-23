@@ -1,6 +1,6 @@
 import { Badge, CloseButton, Tooltip } from '@mantine/core'
 import type { Grade } from '../../api/types'
-import { formatDate, formatGrade, gradeColor } from './format'
+import { formatDate, formatGrade, gradeTone } from './format'
 
 export function GradeBadge({ grade, onDelete }: { grade: Grade; onDelete?: () => void }) {
   return (
@@ -8,7 +8,8 @@ export function GradeBadge({ grade, onDelete }: { grade: Grade; onDelete?: () =>
       <Badge
         size="lg"
         variant="light"
-        color={gradeColor(grade.value)}
+        className="grade-badge"
+        data-tone={gradeTone(grade.value)}
         rightSection={
           onDelete && <CloseButton size="xs" aria-label="Удалить оценку" onClick={onDelete} />
         }

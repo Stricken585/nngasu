@@ -31,6 +31,18 @@ export function currentWeekParity(date = new Date()): WeekParity {
   return week % 2 === 0 ? 'EVEN' : 'ODD'
 }
 
+// Сегодня и ближайшие учебные дни (воскресенье пропускается) — всего `count` штук.
+export function upcomingStudyDays(count: number, from = new Date()) {
+  const days: { date: Date; day: DayOfWeek; isToday: boolean }[] = []
+  const date = new Date(from.getFullYear(), from.getMonth(), from.getDate())
+  while (days.length < count) {
+    const day = todayDayOfWeek(date)
+    if (day) days.push({ date: new Date(date), day, isToday: date.getTime() === new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime() })
+    date.setDate(date.getDate() + 1)
+  }
+  return days
+}
+
 export function todayDayOfWeek(date = new Date()): DayOfWeek | null {
   const idx = date.getDay() // 0 = воскресенье
   return idx === 0 ? null : DAYS[idx - 1].value

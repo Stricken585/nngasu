@@ -30,7 +30,7 @@ export function MessagesPage() {
       <PageHeader title="Сообщения" />
       <QueryState isLoading={contacts.isLoading} error={contacts.error}>
         {contacts.data && (
-          <Paper withBorder radius="md" h="calc(100dvh - 190px)" mih={420} style={{ overflow: 'hidden' }}>
+          <Paper withBorder h="calc(100dvh - 190px)" mih={420} style={{ overflow: 'hidden' }}>
             <Group h="100%" gap={0} wrap="nowrap" align="stretch">
               {showList && (
                 <Box

@@ -4,7 +4,24 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Сайт вуза</title>
+    <title>ННГАСУ — учебный портал</title>
+    <meta name="description" content="Расписание, оценки и чаты групп для студентов и преподавателей ННГАСУ. Учебный проект." />
+
+    <!-- Тема выставляется до отрисовки страницы, чтобы не мигало -->
+    <script>
+      try {
+        var saved = localStorage.getItem('mantine-color-scheme-value')
+        var scheme = saved === 'light' || saved === 'dark' ? saved : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.setAttribute('data-mantine-color-scheme', scheme)
+      } catch (e) {}
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Unbounded:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="root"></div>

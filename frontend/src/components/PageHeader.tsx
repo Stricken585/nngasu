@@ -5,7 +5,9 @@ export function PageHeader({ title, description, actions }: { title: string; des
   return (
     <Group justify="space-between" align="flex-end" mb="lg" gap="md">
       <Stack gap={2}>
-        <Title order={2}>{title}</Title>
+        <Title order={2} className="page-title">
+          {title}
+        </Title>
         {description && <Text c="dimmed">{description}</Text>}
       </Stack>
       {actions}
