@@ -24,6 +24,7 @@ const properties = {
   lessonType: 'Тип занятия',
   value: 'Оценка',
   content: 'Текст',
+  title: 'Заголовок',
   sender: 'Отправитель',
   receiver: 'Получатель',
 };
@@ -45,7 +46,7 @@ const enumValues = {
   'lessonType.LAB': 'Лабораторная',
 };
 
-const resourceNames = ['User', 'Group', 'Discipline', 'Assignment', 'ScheduleEntry', 'Grade', 'Message'];
+const resourceNames = ['User', 'Group', 'Discipline', 'Assignment', 'ScheduleEntry', 'Grade', 'Message', 'News'];
 
 export const ruTranslations: LocaleTranslations = {
   ...en,
@@ -96,6 +97,7 @@ export const ruTranslations: LocaleTranslations = {
     ScheduleEntry: 'Расписание',
     Grade: 'Оценки',
     Message: 'Сообщения',
+    News: 'Новости',
   },
   properties: { ...en.properties, ...properties, length: 'Длина', from: 'С', to: 'По' },
   resources: Object.fromEntries(

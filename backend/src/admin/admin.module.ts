@@ -148,6 +148,19 @@ function assignmentResource(prisma: PrismaService): ResourceWithOptions {
               },
               assignmentResource(prisma),
               scheduleResource(prisma, schedule),
+              {
+                resource: { model: getModelByName('News'), client: prisma },
+                options: {
+                  navigation: { name: 'Контент' },
+                  listProperties: ['title', 'createdAt'],
+                  filterProperties: ['title', 'createdAt'],
+                  sort: { sortBy: 'createdAt', direction: 'desc' },
+                  properties: {
+                    content: { type: 'textarea', isVisible: { list: false, filter: false, show: true, edit: true } },
+                    createdAt: { isVisible: { list: true, filter: true, show: true, edit: false } },
+                  },
+                },
+              },
               // Оценки и сообщения — только просмотр/удаление, для модерации.
               {
                 resource: { model: getModelByName('Grade'), client: prisma },

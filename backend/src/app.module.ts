@@ -10,6 +10,7 @@ import { DisciplinesModule } from './disciplines/disciplines.module.js';
 import { GradesModule } from './grades/grades.module.js';
 import { GroupsModule } from './groups/groups.module.js';
 import { MessagesModule } from './messages/messages.module.js';
+import { NewsModule } from './news/news.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ScheduleModule } from './schedule/schedule.module.js';
 import { UsersModule } from './users/users.module.js';
@@ -25,6 +26,7 @@ import { UsersModule } from './users/users.module.js';
     ScheduleModule,
     GradesModule,
     MessagesModule,
+    NewsModule,
     AdminModule,
   ],
   providers: [
