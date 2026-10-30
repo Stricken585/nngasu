@@ -3,7 +3,8 @@ import { IconSearch, IconUsersGroup } from '@tabler/icons-react'
 import { useState } from 'react'
 import type { Contacts } from '../../api/types'
 import { ROLE_LABELS } from '../../components/roleLabels'
-import { chatId, type ChatRef } from './chatKeys'
+import { useCurrentUser } from '../auth/AuthContext'
+import { chatId, groupChatTitle, type ChatRef } from './chatKeys'
 
 interface Props {
   contacts: Contacts
@@ -15,7 +16,13 @@ export function ChatList({ contacts, active, onSelect }: Props) {
   const activeId = active && chatId(active)
   const [query, setQuery] = useState('')
   const q = query.trim().toLowerCase()
-  const groups = contacts.groups.filter((g) => g.name.toLowerCase().includes(q))
+  const me = useCurrentUser()
+  const groups = contacts.groupChats.filter(
+    (gc) =>
+      gc.group.name.toLowerCase().includes(q) ||
+      gc.teacher.fullName.toLowerCase().includes(q) ||
+      gc.disciplines.some((d) => d.toLowerCase().includes(q)),
+  )
   const users = contacts.users.filter(
     (u) =>
       u.fullName.toLowerCase().includes(q) ||
@@ -26,7 +33,7 @@ export function ChatList({ contacts, active, onSelect }: Props) {
     <Box h="100%" style={{ display: 'flex', flexDirection: 'column' }}>
       <Box p="xs" style={{ flexShrink: 0, borderBottom: '1px solid var(--line)' }}>
         <TextInput
-          placeholder="Поиск по имени или группе"
+          placeholder="Поиск по имени, группе или предмету"
           aria-label="Поиск по чатам"
           leftSection={<IconSearch size={16} />}
           value={query}
@@ -43,18 +50,18 @@ export function ChatList({ contacts, active, onSelect }: Props) {
             {q ? 'Ничего не найдено' : 'Нет групп'}
           </Text>
         )}
-        {groups.map((g) => (
+        {groups.map((gc) => (
           <NavLink
-            key={g.id}
-            label={g.name}
-            description="Чат группы"
+            key={`${gc.group.id}:${gc.teacher.id}`}
+            label={groupChatTitle(gc, me.role)}
+            description={gc.disciplines.join(', ')}
             leftSection={
               <Avatar radius="xl" size="sm" color="var(--t3-ink)" bg="var(--t3)">
                 <IconUsersGroup size={16} />
               </Avatar>
             }
-            active={activeId === chatId({ type: 'group', id: g.id })}
-            onClick={() => onSelect({ type: 'group', id: g.id })}
+            active={activeId === chatId({ type: 'group', id: gc.group.id, teacherId: gc.teacher.id })}
+            onClick={() => onSelect({ type: 'group', id: gc.group.id, teacherId: gc.teacher.id })}
           />
         ))}
         <Divider my="xs" />

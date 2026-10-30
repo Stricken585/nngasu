@@ -18,8 +18,26 @@ export class MessagesController {
     return this.messages.directHistory(user, userId);
   }
 
-  @Get('group/:groupId')
-  group(@Param('groupId', ParseUUIDPipe) groupId: string, @CurrentUser() user: AuthUser) {
-    return this.messages.groupHistory(user, groupId);
+  @Get('dm/:userId/members')
+  directMembers(@Param('userId', ParseUUIDPipe) userId: string, @CurrentUser() user: AuthUser) {
+    return this.messages.members(user, { receiverId: userId });
+  }
+
+  @Get('group/:groupId/:teacherId')
+  group(
+    @Param('groupId', ParseUUIDPipe) groupId: string,
+    @Param('teacherId', ParseUUIDPipe) teacherId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.messages.groupHistory(user, groupId, teacherId);
+  }
+
+  @Get('group/:groupId/:teacherId/members')
+  groupMembers(
+    @Param('groupId', ParseUUIDPipe) groupId: string,
+    @Param('teacherId', ParseUUIDPipe) teacherId: string,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.messages.members(user, { groupId, teacherId });
   }
 }

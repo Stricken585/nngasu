@@ -53,4 +53,12 @@ export class AssignmentsService {
     });
     return rows.map((r) => r.groupId);
   }
+
+  // Условие «запись относится к паре (дисциплина, группа), которую ведёт
+  // преподаватель» — для Grade и Attendance; null, если ничего не ведёт.
+  async teacherScope(teacherId: string) {
+    const own = await this.prisma.assignment.findMany({ where: { teacherId } });
+    if (own.length === 0) return null;
+    return { OR: own.map((a) => ({ disciplineId: a.disciplineId, student: { groupId: a.groupId } })) };
+  }
 }

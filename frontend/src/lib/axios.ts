@@ -1,9 +1,13 @@
 import axios, { AxiosError } from 'axios'
+import { getToken } from './session'
 
-// Авторизация — httpOnly-cookie, которую ставит бэкенд; токен в JS не виден.
-export const api = axios.create({
-  baseURL: '/api',
-  withCredentials: true,
+// Авторизация — JWT из sessionStorage вкладки в заголовке Authorization.
+export const api = axios.create({ baseURL: '/api' })
+
+api.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
 })
 
 let onUnauthorized: (() => void) | null = null

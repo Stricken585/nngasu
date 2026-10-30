@@ -49,11 +49,29 @@ export interface ScheduleEntry {
 
 export interface Grade {
   id: string
-  value: number
+  value: number | null // null — запись только с примечанием
+  date: string // YYYY-MM-DD, день занятия
+  status: string | null
+  comment: string | null
   createdAt: string
   student: UserShort & { groupId: string | null }
   teacher: UserShort
   discipline: Discipline
+}
+
+// Отметка «н» (неявка) студента на занятии.
+export interface Absence {
+  id: string
+  date: string
+  student: UserShort & { groupId: string | null }
+  discipline: Discipline
+}
+
+export interface Attachment {
+  id: string
+  fileName: string
+  mimeType: string
+  size: number
 }
 
 export interface Message {
@@ -62,8 +80,13 @@ export interface Message {
   senderId: string
   receiverId: string | null
   groupId: string | null
+  teacherId: string | null
   createdAt: string
+  editedAt: string | null
+  pinnedAt: string | null
+  forwardedFromName: string | null
   sender: UserShort & { role: Role }
+  attachments: Attachment[]
 }
 
 export interface Contact extends UserShort {
@@ -71,9 +94,28 @@ export interface Contact extends UserShort {
   group: Group | null
 }
 
+// Групповой чат = группа + один её преподаватель.
+export interface GroupChat {
+  group: Group
+  teacher: UserShort
+  disciplines: string[]
+}
+
 export interface Contacts {
   users: Contact[]
-  groups: Group[]
+  groupChats: GroupChat[]
+}
+
+export interface ChatMember extends UserShort {
+  role: Role
+}
+
+export interface DeletedMessage {
+  id: string
+  senderId: string
+  receiverId: string | null
+  groupId: string | null
+  teacherId: string | null
 }
 
 export interface News {

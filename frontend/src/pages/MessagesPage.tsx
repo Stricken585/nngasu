@@ -6,7 +6,8 @@ import { PageHeader } from '../components/PageHeader'
 import { QueryState } from '../components/QueryState'
 import { ChatList } from '../features/messages/ChatList'
 import { ChatWindow } from '../features/messages/ChatWindow'
-import { chatId, parseChatId } from '../features/messages/chatKeys'
+import { useCurrentUser } from '../features/auth/AuthContext'
+import { chatId, groupChatTitle, parseChatId } from '../features/messages/chatKeys'
 import { useContacts } from '../features/messages/useChat'
 
 export function MessagesPage() {
@@ -15,10 +16,17 @@ export function MessagesPage() {
   const active = parseChatId(params.get('chat'))
   const isMobile = useMediaQuery('(max-width: 48em)')
 
+  const me = useCurrentUser()
+  const groupChat =
+    active?.type === 'group'
+      ? contacts.data?.groupChats.find((gc) => gc.group.id === active.id && gc.teacher.id === active.teacherId)
+      : undefined
   const title = !active
     ? ''
     : active.type === 'group'
-      ? `Чат группы ${contacts.data?.groups.find((g) => g.id === active.id)?.name ?? ''}`
+      ? groupChat
+        ? groupChatTitle(groupChat, me.role)
+        : 'Чат группы'
       : (contacts.data?.users.find((u) => u.id === active.id)?.fullName ?? 'Личные сообщения')
 
   // На телефоне — либо список, либо открытый чат.

@@ -13,7 +13,6 @@ import { RegisterDto } from './dto/register.dto.js';
 @Controller('auth')
 export class AuthController {
   private readonly cookieName: string;
-  private readonly secureCookie: boolean;
 
   constructor(
     private readonly auth: AuthService,
@@ -21,15 +20,13 @@ export class AuthController {
     config: ConfigService,
   ) {
     this.cookieName = config.getOrThrow<string>('COOKIE_NAME');
-    this.secureCookie = config.get('NODE_ENV') === 'production';
   }
 
   @Public()
   @Post('register')
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const user = await this.auth.register(dto);
-    this.setCookie(res, user);
-    return user;
+    return { user, token: this.auth.signToken(user).token };
   }
 
   // LoginDto описывает тело для валидации/документации; сами учётные данные
@@ -41,32 +38,20 @@ export class AuthController {
   async login(
     @Body() _dto: LoginDto,
     @CurrentUser() user: AuthUser,
-    @Res({ passthrough: true }) res: Response,
   ) {
-    this.setCookie(res, user);
-    return this.users.findById(user.id);
+    return { user: await this.users.findById(user.id), token: this.auth.signToken(user).token };
   }
 
   @Public()
   @Post('logout')
   @HttpCode(204)
   logout(@Res({ passthrough: true }) res: Response) {
+    // Токен теперь живёт в sessionStorage вкладки; cookie чистим ради старых сессий.
     res.clearCookie(this.cookieName, { path: '/' });
   }
 
   @Get('me')
   me(@CurrentUser() user: AuthUser) {
     return this.users.findById(user.id);
-  }
-
-  private setCookie(res: Response, user: AuthUser) {
-    const { token, expiresAt } = this.auth.signToken(user);
-    res.cookie(this.cookieName, token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: this.secureCookie,
-      path: '/',
-      expires: expiresAt,
-    });
   }
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { AdminModule } from './admin/admin.module.js';
+import { AttendanceModule } from './attendance/attendance.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { RolesGuard } from './common/guards/roles.guard.js';
@@ -25,6 +26,7 @@ import { UsersModule } from './users/users.module.js';
     DisciplinesModule,
     ScheduleModule,
     GradesModule,
+    AttendanceModule,
     MessagesModule,
     NewsModule,
     AdminModule,

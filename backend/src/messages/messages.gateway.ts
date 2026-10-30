@@ -1,5 +1,4 @@
 import { HttpException, Logger, UseGuards } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
@@ -9,11 +8,10 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { parseCookie } from 'cookie';
 import type { Server, Socket } from 'socket.io';
 import type { AuthUser, JwtPayload } from '../common/auth-user.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { dmRoom, groupRoom, MessagesService } from './messages.service.js';
+import { dmRoom, groupRoom, MessagesService, roomOfMessage } from './messages.service.js';
 import { WsJwtGuard } from './ws-jwt.guard.js';
 
 type Ack<T = unknown> = { ok: true; data?: T } | { ok: false; error: string };
@@ -30,14 +28,12 @@ export class MessagesGateway implements OnGatewayConnection {
     private readonly messages: MessagesService,
     private readonly jwt: JwtService,
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
   ) {}
 
   async handleConnection(client: Socket) {
     try {
-      const cookies = parseCookie(client.handshake.headers.cookie ?? '');
-      const token = cookies[this.config.getOrThrow<string>('COOKIE_NAME')];
-      if (!token) throw new Error('нет токена');
+      const token = (client.handshake.auth as { token?: unknown } | undefined)?.token;
+      if (typeof token !== 'string' || !token) throw new Error('нет токена');
       const payload = await this.jwt.verifyAsync<JwtPayload>(token);
       const user: AuthUser | null = await this.prisma.user.findUnique({
         where: { id: payload.sub },
@@ -62,28 +58,88 @@ export class MessagesGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage('group:join')
-  joinGroup(@ConnectedSocket() client: Socket, @MessageBody() body: { groupId: string }) {
+  joinGroup(@ConnectedSocket() client: Socket, @MessageBody() body: { groupId: string; teacherId: string }) {
     return this.run(async () => {
-      await this.messages.assertCanWriteGroup(client.data.user, body?.groupId);
-      await client.join(groupRoom(body.groupId));
+      await this.messages.assertCanWriteGroup(client.data.user, body?.groupId, body?.teacherId);
+      await client.join(groupRoom(body.groupId, body.teacherId));
     });
   }
 
   @SubscribeMessage('dm:send')
-  sendDirect(@ConnectedSocket() client: Socket, @MessageBody() body: { receiverId: string; content: string }) {
+  sendDirect(@ConnectedSocket() client: Socket, @MessageBody() body: { receiverId: string; content: string; attachmentIds?: string[] }) {
     return this.run(async () => {
-      const user: AuthUser = client.data.user;
-      const message = await this.messages.send(user, { receiverId: body?.receiverId, content: body?.content });
-      this.server.to(dmRoom(user.id, body.receiverId)).emit('message', message);
+      const message = await this.messages.send(client.data.user, {
+        receiverId: body?.receiverId,
+        content: body?.content,
+        attachmentIds: body?.attachmentIds,
+      });
+      this.server.to(roomOfMessage(message)).emit('message', message);
       return message;
     });
   }
 
   @SubscribeMessage('group:send')
-  sendGroup(@ConnectedSocket() client: Socket, @MessageBody() body: { groupId: string; content: string }) {
+  sendGroup(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { groupId: string; teacherId: string; content: string; attachmentIds?: string[] },
+  ) {
     return this.run(async () => {
-      const message = await this.messages.send(client.data.user, { groupId: body?.groupId, content: body?.content });
-      this.server.to(groupRoom(body.groupId)).emit('message', message);
+      const message = await this.messages.send(client.data.user, {
+        groupId: body?.groupId,
+        teacherId: body?.teacherId,
+        content: body?.content,
+        attachmentIds: body?.attachmentIds,
+      });
+      this.server.to(roomOfMessage(message)).emit('message', message);
+      return message;
+    });
+  }
+
+  @SubscribeMessage('message:edit')
+  edit(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string; content: string }) {
+    return this.run(async () => {
+      const message = await this.messages.edit(client.data.user, body?.id, body?.content);
+      this.server.to(roomOfMessage(message)).emit('message:updated', message);
+      return message;
+    });
+  }
+
+  @SubscribeMessage('message:delete')
+  delete(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string }) {
+    return this.run(async () => {
+      const message = await this.messages.remove(client.data.user, body?.id);
+      this.server.to(roomOfMessage(message)).emit('message:deleted', {
+        id: message.id,
+        senderId: message.senderId,
+        receiverId: message.receiverId,
+        groupId: message.groupId,
+        teacherId: message.teacherId,
+      });
+    });
+  }
+
+  @SubscribeMessage('message:pin')
+  pin(@ConnectedSocket() client: Socket, @MessageBody() body: { id: string; pinned: boolean }) {
+    return this.run(async () => {
+      const message = await this.messages.setPinned(client.data.user, body?.id, !!body?.pinned);
+      this.server.to(roomOfMessage(message)).emit('message:updated', message);
+      return message;
+    });
+  }
+
+  // Пересылка в другой чат: получатель задаётся так же, как при отправке.
+  @SubscribeMessage('message:forward')
+  forward(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { id: string; receiverId?: string; groupId?: string; teacherId?: string },
+  ) {
+    return this.run(async () => {
+      const message = await this.messages.forward(client.data.user, body?.id, {
+        receiverId: body?.receiverId,
+        groupId: body?.groupId,
+        teacherId: body?.teacherId,
+      });
+      this.server.to(roomOfMessage(message)).emit('message', message);
       return message;
     });
   }

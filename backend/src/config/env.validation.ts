@@ -6,6 +6,7 @@ export const envValidationSchema = Joi.object({
   JWT_EXPIRES_IN: Joi.string().default('7d'),
   COOKIE_NAME: Joi.string().default('access_token'),
   PORT: Joi.number().default(3000),
+  UPLOAD_DIR: Joi.string().default('uploads'),
   ADMIN_EMAIL: Joi.string().email({ tlds: false }).required(),
   ADMIN_PASSWORD: Joi.string().required(),
   NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),

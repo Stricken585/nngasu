@@ -10,7 +10,7 @@ export function GradesPage() {
   if (user.role === 'TEACHER') {
     return (
       <>
-        <PageHeader title="Оценки" description="Выставление оценок по 5-балльной шкале, допускаются дробные (например, 4,6)" />
+        <PageHeader title="Журнал" description="Оценки от 0 до 5 (допускаются дробные), отметки «н» и примечания по датам занятий" />
         <TeacherGrades />
       </>
     )
@@ -18,7 +18,7 @@ export function GradesPage() {
 
   return (
     <>
-      <PageHeader title="Мои оценки" description="Текущий семестр" />
+      <PageHeader title="Мои оценки и посещаемость" description="Нажмите на оценку, чтобы увидеть дату, статус и примечание" />
       {user.groupId ? (
         <StudentGrades />
       ) : (

@@ -140,6 +140,8 @@ body {
 .grade-badge[data-tone='ok'] { background: var(--t4) !important; color: var(--t4-ink) !important; }
 .grade-badge[data-tone='low'] { background: var(--t1) !important; color: var(--t1-ink) !important; }
 .grade-badge[data-tone='bad'] { background: var(--soft) !important; color: var(--soft-ink) !important; }
+.grade-badge[data-tone='note'] { background: var(--surface-2) !important; color: var(--soft-ink) !important; }
+.absence-badge { background: var(--soft) !important; color: var(--soft-ink) !important; cursor: pointer; }
 
 /* Карточки, меню, таблицы */
 .mantine-Paper-root,
@@ -283,3 +285,15 @@ body {
 .grade-row + .grade-row { border-top: 1px solid var(--line); }
 .grade-row b { font-weight: 500; display: block; }
 .grade-row small { color: var(--mute); font-size: 13px; }
+
+/* Вложения в чате */
+.attachment { margin: 2px 0 6px; }
+.attachment-img, .attachment-media { display: block; max-width: min(320px, 100%); max-height: 260px; border-radius: var(--r-sm); object-fit: cover; }
+.attachment-audio { display: block; width: min(300px, 100%); }
+.attachment-file { margin-top: 4px; padding: 8px 10px; border-radius: var(--r-sm); background: rgba(128, 128, 128, 0.18); min-width: 200px; }
+.attachment-dl { margin-left: auto; display: inline-flex; color: inherit; flex-shrink: 0; }
+.pending-file { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 4px 6px 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); font-size: 13px; }
+.pending-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+.pending-size { color: var(--mute); font-size: 12px; }
+.pending-file button { display: grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: var(--mute); cursor: pointer; }
+.pending-file button:hover { background: var(--line); color: var(--ink); }

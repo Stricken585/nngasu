@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { messagesApi } from '../../api/messages'
 import type { Message } from '../../api/types'
-import { chatQueryKey, type ChatRef } from './chatKeys'
+import { chatId, chatQueryKey, membersQueryKey, parseChatId, type ChatRef } from './chatKeys'
 import { useSocket } from './SocketContext'
 
 export function useContacts() {
@@ -18,22 +18,22 @@ export function useChat(chat: ChatRef) {
 
   const history = useQuery({
     queryKey: chatQueryKey(chat),
-    queryFn: () => (chat.type === 'dm' ? messagesApi.direct(chat.id) : messagesApi.group(chat.id)),
+    queryFn: () => (chat.type === 'dm' ? messagesApi.direct(chat.id) : messagesApi.group(chat.id, chat.teacherId)),
     // Пропущенное за время разрыва соединения подтянется при переподключении.
     staleTime: Infinity,
   })
 
-  const { type, id } = chat
+  const key = chatId(chat)
   useEffect(() => {
     if (!connected) return
-    joinChat({ type, id } as ChatRef).then(
+    joinChat(parseChatId(key)!).then(
       () => setJoinError(null),
       (e: Error) => setJoinError(e.message),
     )
-  }, [connected, joinChat, type, id])
+  }, [connected, joinChat, key])
 
-  const sendMessage = async (content: string) => {
-    const message = await send(chat, content)
+  const sendMessage = async (content: string, attachmentIds: string[] = []) => {
+    const message = await send(chat, content, attachmentIds)
     // На случай, если широковещательное событие разминулось с ack.
     queryClient.setQueryData<Message[]>(chatQueryKey(chat), (prev) =>
       prev && !prev.some((m) => m.id === message.id) ? [...prev, message] : prev,
@@ -41,4 +41,12 @@ export function useChat(chat: ChatRef) {
   }
 
   return { history, sendMessage, connected, joinError }
+}
+
+export function useChatMembers(chat: ChatRef, enabled: boolean) {
+  return useQuery({
+    queryKey: membersQueryKey(chat),
+    queryFn: () => (chat.type === 'dm' ? messagesApi.directMembers(chat.id) : messagesApi.groupMembers(chat.id, chat.teacherId)),
+    enabled,
+  })
 }

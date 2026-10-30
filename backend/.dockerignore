@@ -3,3 +3,4 @@ dist
 .adminjs
 .env
 *.tsbuildinfo
+uploads

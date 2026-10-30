@@ -87,7 +87,7 @@ function LastGradesCard() {
                 <div>
                   <b>{g.discipline.name}</b>
                   <small>
-                    {dayjs(g.createdAt).format('D MMMM')} · {g.teacher.fullName}
+                    {dayjs(g.date).format('D MMMM')} · {g.teacher.fullName}
                   </small>
                 </div>
                 <GradeBadge grade={g} />
@@ -101,6 +101,7 @@ function LastGradesCard() {
 }
 
 function TeacherGroupsCard() {
+  const user = useCurrentUser()
   const { data = [], isLoading, error } = useMyAssignments()
 
   const groups = new Map<string, { id: string; name: string; disciplines: string[] }>()
@@ -127,7 +128,7 @@ function TeacherGroupsCard() {
                   <b>{g.name}</b>
                   <small>{g.disciplines.join(', ')}</small>
                 </div>
-                <Button component={Link} to={`/messages?chat=group:${g.id}`} variant="default" size="xs">
+                <Button component={Link} to={`/messages?chat=group:${g.id}:${user.id}`} variant="default" size="xs">
                   Чат
                 </Button>
               </div>

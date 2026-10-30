@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import type { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { AuthUser, JwtPayload } from '../../common/auth-user.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
@@ -12,11 +11,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     config: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    const cookieName = config.getOrThrow<string>('COOKIE_NAME');
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        (req: Request) => (req?.cookies?.[cookieName] as string | undefined) ?? null,
-      ]),
+      // Только заголовок Authorization: токен хранится в sessionStorage вкладки,
+      // а не в общей для браузера cookie — поэтому вкладки могут быть под разными профилями.
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: config.getOrThrow<string>('JWT_SECRET'),
     });
   }

@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react'
-import { authApi } from '../../api/auth'
+import { authApi, type AuthResult } from '../../api/auth'
 import type { User } from '../../api/types'
 import { setUnauthorizedHandler } from '../../lib/axios'
+import { getToken, setToken } from '../../lib/session'
 
 interface AuthContextValue {
   user: User | null
@@ -24,6 +25,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: user = null, isLoading } = useQuery({
     queryKey: ME_KEY,
     queryFn: async () => {
+      // Нет токена в этой вкладке — не вошли (cookie других вкладок не используются).
+      if (!getToken()) return null
       try {
         return await authApi.me()
       } catch (e) {
@@ -36,18 +39,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
+      setToken(null)
       queryClient.clear()
       queryClient.setQueryData(ME_KEY, null)
     })
     return () => setUnauthorizedHandler(null)
   }, [queryClient])
 
-  const onAuthenticated = (u: User) => {
+  const onAuthenticated = ({ user: u, token }: AuthResult) => {
+    setToken(token)
     queryClient.clear()
     queryClient.setQueryData(ME_KEY, u)
   }
-  const loginMutation = useMutation({ mutationFn: authApi.login, onSuccess: onAuthenticated })
-  const registerMutation = useMutation({ mutationFn: authApi.register, onSuccess: onAuthenticated })
+  const loginMutation = useMutation({
+    mutationFn: (data: { email: string; password: string }) => authApi.login(data).then((r) => (onAuthenticated(r), r.user)),
+  })
+  const registerMutation = useMutation({
+    mutationFn: (data: { email: string; password: string; fullName: string }) =>
+      authApi.register(data).then((r) => (onAuthenticated(r), r.user)),
+  })
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -56,7 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login: loginMutation.mutateAsync,
       register: registerMutation.mutateAsync,
       logout: async () => {
-        await authApi.logout()
+        await authApi.logout().catch(() => undefined)
+        setToken(null)
         queryClient.clear()
         queryClient.setQueryData(ME_KEY, null)
       },

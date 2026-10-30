@@ -43,12 +43,16 @@ model User {
   group     Group?   @relation(fields: [groupId], references: [id])
   createdAt DateTime @default(now())
 
-  assignments      Assignment[]
-  scheduleEntries  ScheduleEntry[]
-  gradesGiven      Grade[]         @relation("GradesGivenByTeacher")
-  gradesReceived   Grade[]         @relation("GradesReceivedByStudent")
-  sentMessages     Message[]       @relation("SentMessages")
-  receivedMessages Message[]       @relation("ReceivedMessages")
+  assignments       Assignment[]
+  scheduleEntries   ScheduleEntry[]
+  gradesGiven       Grade[]         @relation("GradesGivenByTeacher")
+  gradesReceived    Grade[]         @relation("GradesReceivedByStudent")
+  absences          Attendance[]    @relation("AbsencesOfStudent")
+  absencesMarked    Attendance[]    @relation("AbsencesMarkedByTeacher")
+  sentMessages      Message[]       @relation("SentMessages")
+  groupChatMessages Message[]       @relation("GroupChatTeacher")
+  receivedMessages  Message[]       @relation("ReceivedMessages")
+  attachments       Attachment[]
 }
 
 model Group {
@@ -66,6 +70,7 @@ model Discipline {
   assignments     Assignment[]
   scheduleEntries ScheduleEntry[]
   grades          Grade[]
+  attendance      Attendance[]
 }
 
 // многие-ко-многим teacher↔discipline↔group, не завязана на расписание
@@ -98,7 +103,10 @@ model ScheduleEntry {
 
 model Grade {
   id           String     @id @default(uuid())
-  value        Decimal    @db.Decimal(3, 2) // 5-балльная, дробная (напр. 4.60)
+  value        Decimal?   @db.Decimal(3, 2) // 0–5, дробная (напр. 4.60); null — запись только с примечанием
+  date         DateTime   @default(now()) @db.Date // дата занятия в журнале
+  status       String? // «Домашняя работа», «Контрольная работа»… или свой текст
+  comment      String?
   studentId    String
   student      User       @relation("GradesReceivedByStudent", fields: [studentId], references: [id], onDelete: Cascade)
   teacherId    String
@@ -106,18 +114,69 @@ model Grade {
   disciplineId String
   discipline   Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
   createdAt    DateTime   @default(now())
+
+  @@index([disciplineId, date])
+}
+
+enum AttendanceStatus {
+  ABSENT // «н» — неявка
+  SICK // «б» — болел
+}
+
+// Строка = студент не был на занятии в этот день (по неуважительной или болезни).
+model Attendance {
+  id           String           @id @default(uuid())
+  studentId    String
+  student      User             @relation("AbsencesOfStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId    String
+  teacher      User             @relation("AbsencesMarkedByTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  disciplineId String
+  discipline   Discipline       @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  date         DateTime         @db.Date
+  status       AttendanceStatus @default(ABSENT)
+  createdAt    DateTime         @default(now())
+
+  @@unique([studentId, disciplineId, date])
+  @@index([disciplineId, date])
 }
 
 model Message {
-  id         String   @id @default(uuid())
-  content    String
-  senderId   String
-  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId String? // личное сообщение
-  receiver   User?    @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  groupId    String? // групповая рассылка
-  group      Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
+  id                String    @id @default(uuid())
+  content           String
+  senderId          String
+  sender            User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId        String? // личное сообщение
+  receiver          User?     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  groupId           String? // групповой чат = группа + преподаватель (groupId и teacherId заданы вместе)
+  group             Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  teacherId         String?
+  teacher           User?     @relation("GroupChatTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  createdAt         DateTime  @default(now())
+  editedAt          DateTime?
+  pinnedAt          DateTime?
+  forwardedFromName String? // имя автора исходного сообщения, если это пересылка
+
+  attachments Attachment[]
+
+  @@index([groupId, teacherId, createdAt])
+}
+
+// Файл в чате. Сначала загружается отдельным запросом (messageId = null),
+// затем привязывается к сообщению при отправке. Сам файл — на диске,
+// под именем storageName; имя для пользователя хранится здесь.
+model Attachment {
+  id          String   @id @default(uuid())
+  fileName    String
+  mimeType    String
+  size        Int
+  storageName String // у пересланных копий совпадает с оригиналом
+  uploaderId  String
+  uploader    User     @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+  messageId   String?
+  message     Message? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([messageId])
 }
 
 // Новости вуза: создаются администратором в AdminJS, читают все авторизованные.
